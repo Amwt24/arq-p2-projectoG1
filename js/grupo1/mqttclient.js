@@ -2,126 +2,147 @@
 /*####################################### CLIENTE MQTT ###########################################*/
 /*################################################################################################*/
 
-//var wsbroker = "0.tcp.sa.ngrok.io";
+//var wsbroker = "192.168.0.3";  //mqtt websocket enabled broker
 var wsbroker = "broker.hivemq.com";
 //var wsbroker = "localhost";
+//var wsbroker = "0.tcp.sa.ngrok.io";
 
-//var wsport = 14792; // port for above
 var wsport = 1883; // port for above
+//var wsport = 8083 // port for above
+//var wsport = 14792; // port for above
 var client = new Paho.MQTT.Client(
-	wsbroker,
-	//Number(wsport),
-	Number(8000),
-	"myclientid_" + parseInt(Math.random() * 100, 10)
+    wsbroker,
+    //Number(wsport)
+    Number(8000),
+    "myclientid_" + parseInt(Math.random() * 100, 10)
 );
 
 client.onConnectionLost = function (responseObject) {
-	console.log("connection lost: " + responseObject.errorMessage);
+    console.log("connection lost: " + responseObject.errorMessage);
 };
 
 /*################################################################################################*/
 /*####################################### LLEGA EL MENSAJE########################################*/
 /*################################################################################################*/
-let prevCPUValue = 0;
-let prevMemoryValue = 0;
-let prevDiskValue = 0;
-let prevRecepcionValue = 0;
+
+/*let primero = 1;*/
+function addData(data) {
+    // Aquí agregas la lógica para procesar los datos recibidos
+    console.log("Datos recibidos:", data);
+}
 
 client.onMessageArrived = function (message) {
-	let destination = message.destinationName;
-	if (destination === "probar_1") {
+    let destination = message.destinationName;
+    if (destination === "amawta0") {
         let response = JSON.parse(message.payloadString);
         dataFormat = response;
         let dataCPU = dataFormat.CPU;
-        let dataMemoria = dataFormat.Memoria;
+        console.log(dataFormat);
+        let dataMemory = dataFormat.Memory;
         let dataDisco = dataFormat.Disco;
-        let dataRecepcion = dataFormat.Recepcion;
+		let dataProcesos = dataFormat.Aplicaciones;
+
+        console.log(dataFormat);
+        console.log(parseFloat(dataFormat.value));
+
+            document.getElementById("dataCPUElement").textContent = "Valor de CPU: " + dataCPU.toFixed(2) + "%";
+            document.getElementById("dataMemoryElement").textContent = "Valor de uso de Memoria: " + dataMemory.toFixed(2) + "%";
+            document.getElementById("dataDiscoElement").textContent = "Valor Usado de Disco: " + dataDisco.toFixed(2) + " GB";
+            document.getElementById("dataProcesos").textContent = "Procesos en ejecución: " + dataProcesos;
+        //Cargar datos CPU , Memoria y Almacenamiento
+        addData(
+            chart_bars,
+            parseFloat(dataCPU),
+            
+        );
+
+        addData(
+            chart_line,
+            parseFloat(dataMemory),
+            
+        );
         
-        //info pc
-        document.getElementById("arquitecturaValue").innerText = response.Arquitectura;
-        document.getElementById("sistemaValue").innerText = response.Sistema;
-        document.getElementById("ramValue").innerText = response.Ram;
-        document.getElementById("procesadorValue").innerText = response.Procesador;
-        document.getElementById("almacenamientoValue").innerText = response.Almacenamiento;
+        addData(
+            chart_line_tasks,
+            parseFloat(dataDisco),
+            
+        );
+		
+        addData(message.payloadString);
+    } 
+	if (destination === "shiri0") {
+//para otra Pc
+ 
+		let response = JSON.parse(message.payloadString);
+		dataFormat = response;
+		let dataCPU1 = dataFormat.CPU1;
+		console.log(dataFormat);
+		let dataMemory1 = dataFormat.Memory1;
+		let dataDisco1 = dataFormat.Disco1;
+		let dataProcesos1 = dataFormat.Aplicaciones1;
 
-        // Calcular la diferencia con respecto al valor anterior
-        let diffCPU = dataCPU - prevCPUValue;
-        let diffMemory = dataMemoria - prevMemoryValue;
-        let diffDisk = dataDisco - prevDiskValue;
-        let diffRecepcion = dataRecepcion - prevRecepcionValue;
+		console.log(dataFormat);
+		console.log(parseFloat(dataFormat.value));
 
-        // Calcular el porcentaje de cambio
-        let percentageCPU = calculatePercentage(diffCPU, prevCPUValue);
-        let percentageMemory = calculatePercentage(diffMemory, prevMemoryValue);
-        let percentageDisk = calculatePercentage(diffDisk, prevDiskValue);
-        let percentageRecepcion = calculatePercentage(diffRecepcion, prevRecepcionValue);
+			document.getElementById("dataCPUElement1").textContent = "Valor de CPU: " + dataCPU1.toFixed(2) + "%";
+			document.getElementById("dataMemoryElement1").textContent = "Valor de uso de Memoria: " + dataMemory1.toFixed(2) + "%";
+			document.getElementById("dataDiscoElement1").textContent = "Valor Usado de Disco: " + dataDisco1.toFixed(2) + " GB";
+			document.getElementById("dataProcesos1").textContent = "Procesos en ejecución: " + dataProcesos1;
+	//Cargar datos CPU , Memoria y Almacenamiento
+		addData(
+			chart_bars,
+			parseFloat(dataCPU1),
+		
+		);
 
-        // Actualizar los valores en tiempo real en la página
-        document.getElementById("cpuValue").innerText = dataCPU;
-        document.getElementById("memoryValue").innerText = dataMemoria;
-        document.getElementById("diskValue").innerText = dataDisco;
-        document.getElementById("RecepcionValue").innerText = dataRecepcion;
+		addData(
+			chart_line,
+			parseFloat(dataMemory1),
+		
+		);
+	
+		addData(
+			chart_line_tasks,
+			parseFloat(dataDisco1),
+		
+		);
+	
+		addData(message.payloadString);
+	}
 
-        // Actualizar los porcentajes en la página
-        document.getElementById("cpuPercentage").innerHTML = getColoredPercentage(percentageCPU);
-        document.getElementById("memoryPercentage").innerHTML = getColoredPercentage(percentageMemory);
-        document.getElementById("diskPercentage").innerHTML = getColoredPercentage(percentageDisk);
-        document.getElementById("RecepcionPercentage").innerHTML = getColoredPercentage(percentageRecepcion);
-
-        // Actualizar los valores anteriores con los nuevos valores
-        prevCPUValue = dataCPU;
-        prevMemoryValue = dataMemoria;
-        prevDiskValue = dataDisco;
-        prevRecepcionValue = dataRecepcion;
-
-        // Cargar datos CPU, Memoria y Almacenamiento en las gráficas
-        addData(myChartCPU, dataCPU);
-        addData2(myChartMemory, dataMemoria);
-        addData3(myChartDisk, dataDisco);
-    }
 };
 
-// Función para calcular el porcentaje de cambio
-function calculatePercentage(diff, prevValue) {
-    if (prevValue === 0) {
-        return "0"; // Si el valor anterior es cero, el porcentaje de cambio es cero
-    }
+function enviarMensajeMQTT(mensajeJSON) {
+    let messageObj = new Paho.MQTT.Message(mensajeJSON);
+    messageObj.destinationName = "amawta3"; // Cambia al topic correcto
+	/*messageObj.destinationName = "shiri3";*/
+    client.send(messageObj);
+}
 
-    let percentage = ((diff / prevValue) * 100).toFixed(2);
-    if (isFinite(percentage)) {
-        return percentage >= 0 ? "+" + percentage : percentage;
-    } else {
-        return "0";
-    }
-}
-// Función para obtener el porcentaje coloreado
-function getColoredPercentage(percentage) {
-    if (parseFloat(percentage) > 0) {
-        return '<span style="color: green;">' + percentage + '%</span>';
-    } else if (parseFloat(percentage) < 0) {
-        return '<span style="color: red;">' + percentage + '%</span>';
-    } else {
-        return percentage + '%';
-    }
-}
+
 
 var options = {
-	timeout: 3,
-	onSuccess: function () {
-		console.log("mqtt connected");
-		// Connection succeeded; subscribe to our topic, you can add multile lines of these
-		client.subscribe("probar_1", { qos: 1 });
-	},
-	onFailure: function (message) {
-		console.log("Connection failed: " + message.errorMessage);
-	},
+    timeout: 1,
+    onSuccess: function () {
+        console.log("mqtt connected");
+        // Connection succeeded; subscribe to our topic, you can add multile lines of these
+        client.subscribe("amawta0", { qos: 1 });
+        client.subscribe("shiri0", { qos: 1 });
+    },
+    onFailure: function (message) {
+        console.log("Connection failed: " + message.errorMessage);
+    },
 };
 
-
 function testMqtt(){
-	console.log("hi");
+    console.log("hi");
 }
+var chart_bars;
+var chart_line;
+var chart_line_tasks;
+var chart_line_tasks1;
 function initMqtt() {
-    console.log
-	client.connect(options);
+    client.connect(options);
 }
+
+
